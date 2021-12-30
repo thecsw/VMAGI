@@ -1,0 +1,18 @@
+        addi #1, 100, #1 -- 0 Start with 100
+        push #1          -- 1 Push it as a parameter
+        call @sum        -- 2 Call sum(100)
+        pop #1           -- 3 Pop the result of sum(100)
+        halt #1          -- 4 Halt with the result
+
+sum:    pop #1           -- 5 Get the first argument (n)
+        jmpz #1, @base   -- 6 If arg is 0, go to base case
+        subi #1, 1, #2   -- 7 Subtract one from it (n-1)
+        push #2          -- 8 Push the new value to call
+        call @sum        -- 9 Call a new sum(n-1)
+        pop #2           -- 10 Pop the result of sum(n-1)
+        add #1, #2, #1   -- 11 Compute n+sum(n-1)
+        push #1          -- 12 Put the result in the stack
+        ret              -- 13 Return (end the function)
+
+base:   pushi 0          -- 14 Push 0 as the base case for sum(0)
+        ret              -- 15 Return from the function

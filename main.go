@@ -13,12 +13,13 @@ func main() {
 
 	if len(os.Args) != 2 {
 		fmt.Println("Usage: VMAGI <INPUT FILE>")
-		os.Exit(1)
+		return
 	}
 
 	data, err := ioutil.ReadFile(os.Args[1])
 	if err != nil {
 		fmt.Println("You gave me a bad file:", err.Error())
+		return
 	}
 
 	// Execute the input by splitting by newlines and parsing

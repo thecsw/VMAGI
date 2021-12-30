@@ -1,0 +1,18 @@
+        addi #1, 15, #1  -- 0 Set 15 as the top call arg
+        push #1          -- 1 Push 15 to the argument stack
+        call @fac        -- 2 Call fac(15)
+        pop #1           -- 3 Grab the return of fac(15)
+        halt #1          -- 4 Halt the machine with the return value
+
+fac:    pop #1           -- 5 Pop the passed argument (n)
+        jmpz #1, @base   -- 6 If n is 0, jump to the base case
+        subi #1, 1, #2   -- 7 Subtract 1 from n, to find (n-1)
+        push #2          -- 8 Push the result of (n-1) to the stack
+        call @fac        -- 9 Find fac(n-1)
+        pop #2           -- 10 Grab the result of fac(n-1)
+        mul #1, #2, #1   -- 11 Compute n*fac(n-1)
+        push #1          -- 12 Push the compute result onto the stack
+        ret              -- 13 Return from the function
+
+base:   pushi 1          -- 14 Push 1 as the base-case for fac(0)
+        ret              -- 15 Return from the function
