@@ -18,6 +18,10 @@ func (s *Stack32) Push(val InstructionDepth) {
 	s.Pointer++
 }
 
+func (s *Stack32) Peek() InstructionDepth {
+	return s.Array[s.Pointer-1]
+}
+
 func (s *Stack32) Pop() InstructionDepth {
 	s.Pointer--
 	return s.Array[s.Pointer]
@@ -39,6 +43,10 @@ func (s *Stack64) Push(val ValueWidth) {
 		s.Array[s.Pointer] = val
 	}
 	s.Pointer++
+}
+
+func (s *Stack64) Peek() ValueWidth {
+	return s.Array[s.Pointer-1]
 }
 
 func (s *Stack64) Pop() ValueWidth {

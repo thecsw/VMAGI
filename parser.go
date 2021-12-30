@@ -223,9 +223,9 @@ func stringToRegister(register string) RegisterDepth {
 	return RegisterDepth(dummyInt)
 }
 
-func stringToImmediate(what string) ImmediateWidth {
+func stringToImmediate(what string) ValueWidth {
 	dummyInt, _ = strconv.Atoi(what)
-	return ImmediateWidth(dummyInt)
+	return ValueWidth(dummyInt)
 }
 
 func addNewLabel(what string) LabelDepth {
@@ -238,7 +238,15 @@ func addNewLabel(what string) LabelDepth {
 	}
 }
 
+var (
+	optimizedFunctions = map[InstructionDepth]interface{}{}
+)
+
 func setLabel(what string, instruction InstructionDepth) {
+	thisFunctionIsSimple := strings.ContainsRune(what, '!')
+	if thisFunctionIsSimple {
+		optimizedFunctions[instruction] = true
+	}
 	Labels[LabelMap[what]] = instruction
 }
 

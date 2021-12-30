@@ -16,7 +16,7 @@ type Instruction struct {
 	SourceRegister2     RegisterDepth
 	DestinationRegister RegisterDepth
 	IsImmediate         bool
-	ImmediateValue      ImmediateWidth
+	ImmediateValue      ValueWidth
 	LabelIndex          LabelDepth
 	LabelImmediate      InstructionDepth
 

@@ -25,6 +25,8 @@ var (
 	src2  RegisterDepth
 	isImm bool
 	imm   ValueWidth
+
+	LastFunctionCalled InstructionDepth
 )
 
 func Execute(instructions []*Instruction) {
@@ -89,7 +91,7 @@ func executeAdd() {
 	if !isImm {
 		setMemory(dst, getMemory(src1)+getMemory(src2))
 	} else {
-		setMemory(dst, getMemory(src1)+ValueWidth(ValueWidth(currInst.ImmediateValue)))
+		setMemory(dst, getMemory(src1)+currInst.ImmediateValue)
 	}
 }
 
@@ -97,7 +99,7 @@ func executeSub() {
 	if !isImm {
 		setMemory(dst, getMemory(src1)-getMemory(src2))
 	} else {
-		setMemory(dst, getMemory(src1)-ValueWidth(ValueWidth(currInst.ImmediateValue)))
+		setMemory(dst, getMemory(src1)-currInst.ImmediateValue)
 	}
 }
 
@@ -105,7 +107,7 @@ func executeMul() {
 	if !isImm {
 		setMemory(dst, getMemory(src1)*getMemory(src2))
 	} else {
-		setMemory(dst, getMemory(src1)*ValueWidth(ValueWidth(currInst.ImmediateValue)))
+		setMemory(dst, getMemory(src1)*currInst.ImmediateValue)
 	}
 }
 
@@ -113,7 +115,7 @@ func executeDiv() {
 	if !isImm {
 		setMemory(dst, getMemory(src1)/getMemory(src2))
 	} else {
-		setMemory(dst, getMemory(src1)/ValueWidth(ValueWidth(currInst.ImmediateValue)))
+		setMemory(dst, getMemory(src1)/currInst.ImmediateValue)
 	}
 }
 
@@ -121,7 +123,7 @@ func executeMod() {
 	if !isImm {
 		setMemory(dst, getMemory(src1)%getMemory(src2))
 	} else {
-		setMemory(dst, getMemory(src1)%ValueWidth(ValueWidth(currInst.ImmediateValue)))
+		setMemory(dst, getMemory(src1)%currInst.ImmediateValue)
 	}
 }
 
@@ -129,7 +131,7 @@ func executeNeg() {
 	if !isImm {
 		setMemory(dst, -1*getMemory(src1))
 	} else {
-		setMemory(dst, -1*ValueWidth(ValueWidth(currInst.ImmediateValue)))
+		setMemory(dst, -1*currInst.ImmediateValue)
 	}
 }
 
@@ -137,7 +139,7 @@ func executeAnd() {
 	if !isImm {
 		setMemory(dst, getMemory(src1)&getMemory(src2))
 	} else {
-		setMemory(dst, getMemory(src1)&ValueWidth(ValueWidth(currInst.ImmediateValue)))
+		setMemory(dst, getMemory(src1)&currInst.ImmediateValue)
 	}
 }
 
@@ -145,7 +147,7 @@ func executeOr() {
 	if !isImm {
 		setMemory(dst, getMemory(src1)|getMemory(src2))
 	} else {
-		setMemory(dst, getMemory(src1)|ValueWidth(ValueWidth(currInst.ImmediateValue)))
+		setMemory(dst, getMemory(src1)|currInst.ImmediateValue)
 	}
 }
 
@@ -153,7 +155,7 @@ func executeNot() {
 	if !isImm {
 		setMemory(dst, negateValue(valueToBool(getMemory(src1))))
 	} else {
-		setMemory(dst, negateValue(valueToBool(ValueWidth((ValueWidth(currInst.ImmediateValue))))))
+		setMemory(dst, negateValue(valueToBool(currInst.ImmediateValue)))
 	}
 }
 
@@ -161,13 +163,32 @@ func executeXor() {
 	if !isImm {
 		setMemory(dst, getMemory(src1)^getMemory(src2))
 	} else {
-		setMemory(dst, getMemory(src1)^ValueWidth(ValueWidth(currInst.ImmediateValue)))
+		setMemory(dst, getMemory(src1)^currInst.ImmediateValue)
 	}
 }
 
+func executePush() {
+	if !isImm {
+		Stack.Push(getMemory(src1))
+	} else {
+		Stack.Push(currInst.ImmediateValue)
+	}
+}
+
+func executePop() {
+	setMemory(dst, Stack.Pop())
+}
+
 func executeCall() {
+	// If optimizer found a cached call for this function,
+	// then it already simulated the function. We leave
+	if cacheFunctionCall(currInst.LabelImmediate) {
+		return
+	}
+
 	ReturnStack.Push(PC)
 	PC = currInst.LabelImmediate
+	LastFunctionCalled = PC
 	ContextNumber++
 	MemoryOffset = RegisterDepth(ContextNumber)*CONTEXT_SIZE - 1
 	// See if we need to bump up the memory
@@ -176,23 +197,27 @@ func executeCall() {
 		copy(newMemory, Memory)
 		Memory = newMemory
 	}
-}
 
-func executeJump() {
-	PC = InstructionDepth(currInst.LabelImmediate)
+	optimizerAnalyzeCallStack()
 }
 
 func executeReturn() {
 	PC = ReturnStack.Pop()
 	ContextNumber--
 	MemoryOffset = RegisterDepth(ContextNumber)*CONTEXT_SIZE - 1
+
+	optimizerAnalyzeReturnStack()
+}
+
+func executeJump() {
+	PC = InstructionDepth(currInst.LabelImmediate)
 }
 
 func executeGreater() {
 	if !isImm {
 		setMemory(dst, boolToValue(getMemory(src1) > getMemory(src2)))
 	} else {
-		setMemory(dst, boolToValue(getMemory(src1) > ValueWidth(ValueWidth(currInst.ImmediateValue))))
+		setMemory(dst, boolToValue(getMemory(src1) > currInst.ImmediateValue))
 	}
 }
 
@@ -200,7 +225,7 @@ func executeGreaterEqual() {
 	if !isImm {
 		setMemory(dst, boolToValue(getMemory(src1) >= getMemory(src2)))
 	} else {
-		setMemory(dst, boolToValue(getMemory(src1) >= ValueWidth(ValueWidth(currInst.ImmediateValue))))
+		setMemory(dst, boolToValue(getMemory(src1) >= currInst.ImmediateValue))
 	}
 }
 
@@ -208,7 +233,7 @@ func executeLess() {
 	if !isImm {
 		setMemory(dst, boolToValue(getMemory(src1) < getMemory(src2)))
 	} else {
-		setMemory(dst, boolToValue(getMemory(src1) < ValueWidth(ValueWidth(currInst.ImmediateValue))))
+		setMemory(dst, boolToValue(getMemory(src1) < currInst.ImmediateValue))
 	}
 }
 
@@ -216,7 +241,7 @@ func executeLessEqual() {
 	if !isImm {
 		setMemory(dst, boolToValue(getMemory(src1) <= getMemory(src2)))
 	} else {
-		setMemory(dst, boolToValue(getMemory(src1) <= ValueWidth(ValueWidth(currInst.ImmediateValue))))
+		setMemory(dst, boolToValue(getMemory(src1) <= currInst.ImmediateValue))
 	}
 }
 
@@ -224,7 +249,7 @@ func executeEqual() {
 	if !isImm {
 		setMemory(dst, boolToValue(getMemory(src1) == getMemory(src2)))
 	} else {
-		setMemory(dst, boolToValue(getMemory(src1) == ValueWidth(ValueWidth(currInst.ImmediateValue))))
+		setMemory(dst, boolToValue(getMemory(src1) == currInst.ImmediateValue))
 	}
 }
 
@@ -232,7 +257,7 @@ func executeNotEqual() {
 	if !isImm {
 		setMemory(dst, boolToValue(getMemory(src1) != getMemory(src2)))
 	} else {
-		setMemory(dst, boolToValue(getMemory(src1) != ValueWidth(ValueWidth(currInst.ImmediateValue))))
+		setMemory(dst, boolToValue(getMemory(src1) != currInst.ImmediateValue))
 	}
 }
 
@@ -260,23 +285,11 @@ func executeJumpIfFalse() {
 	}
 }
 
-func executePush() {
-	if !isImm {
-		Stack.Push(getMemory(src1))
-	} else {
-		Stack.Push(ValueWidth(ValueWidth(currInst.ImmediateValue)))
-	}
-}
-
-func executePop() {
-	setMemory(dst, Stack.Pop())
-}
-
 func executeHalt() {
 	if !isImm {
 		HaltValue = getMemory(src1)
 	} else {
-		HaltValue = ValueWidth(ValueWidth(currInst.ImmediateValue))
+		HaltValue = currInst.ImmediateValue
 	}
 	Halted = true
 }
