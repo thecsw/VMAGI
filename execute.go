@@ -9,14 +9,22 @@ const (
 )
 
 var (
-	Memory        = make([]ValueWidth, MEMORY_DEPTH)
-	MemoryOffset  = RegisterDepth(0)
-	Stack         = &Stack64{}
-	ReturnStack   = &Stack32{}
-	PC            = InstructionDepth(0)
-	HaltValue     ValueWidth
-	Halted        bool
+	Memory      = make([]ValueWidth, MEMORY_DEPTH)
+	Stack       = &Stack64{}
+	ReturnStack = &Stack32{}
+	PC          = InstructionDepth(0)
+	currInst    *Instruction
+	HaltValue   ValueWidth
+	Halted      bool
+
 	ContextNumber = 0
+	MemoryOffset  = RegisterDepth(0)
+
+	dst   RegisterDepth
+	src1  RegisterDepth
+	src2  RegisterDepth
+	isImm bool
+	imm   ValueWidth
 )
 
 func Execute(instructions []*Instruction) {
@@ -30,15 +38,15 @@ func Execute(instructions []*Instruction) {
 	ReturnStack.Init(RETURN_STACK_DEPTH)
 
 	// Start going through instructions
-	var currentPC InstructionDepth
-	var currentInstruction *Instruction
 	for {
-		currentPC = PC
-		currentInstruction = instructions[PC]
-		executeFunctions[currentInstruction.Opcode](currentInstruction)
-		if currentPC == PC {
-			PC++
-		}
+		currInst = instructions[PC]
+		dst = currInst.DestinationRegister
+		src1 = currInst.SourceRegister1
+		src2 = currInst.SourceRegister2
+		isImm = currInst.IsImmediate
+
+		PC++
+		executeFunctions[currInst.Opcode]()
 		if Halted {
 			return
 		}
@@ -46,7 +54,7 @@ func Execute(instructions []*Instruction) {
 }
 
 var (
-	executeFunctionsMap = map[OpcodeNumber]func(*Instruction){
+	executeFunctionsMap = map[OpcodeNumber]func(){
 		HALT:       executeHalt,
 		ADD:        executeAdd,
 		SUB:        executeSub,
@@ -74,207 +82,209 @@ var (
 		NOP:        executeNop,
 	}
 
-	executeFunctions = make([]func(*Instruction), len(executeFunctionsMap))
+	executeFunctions = make([]func(), len(executeFunctionsMap))
 )
 
-func executeAdd(inst *Instruction) {
-	if !inst.IsImmediate {
-		setMemory(inst.DestinationRegister, getMemory(inst.SourceRegister1)+getMemory(inst.SourceRegister2))
+func executeAdd() {
+	if !isImm {
+		setMemory(dst, getMemory(src1)+getMemory(src2))
 	} else {
-		setMemory(inst.DestinationRegister, getMemory(inst.SourceRegister1)+ValueWidth(inst.ImmediateValue))
+		setMemory(dst, getMemory(src1)+ValueWidth(ValueWidth(currInst.ImmediateValue)))
 	}
 }
 
-func executeSub(inst *Instruction) {
-	if !inst.IsImmediate {
-		setMemory(inst.DestinationRegister, getMemory(inst.SourceRegister1)-getMemory(inst.SourceRegister2))
+func executeSub() {
+	if !isImm {
+		setMemory(dst, getMemory(src1)-getMemory(src2))
 	} else {
-		setMemory(inst.DestinationRegister, getMemory(inst.SourceRegister1)-ValueWidth(inst.ImmediateValue))
+		setMemory(dst, getMemory(src1)-ValueWidth(ValueWidth(currInst.ImmediateValue)))
 	}
 }
 
-func executeMul(inst *Instruction) {
-	if !inst.IsImmediate {
-		setMemory(inst.DestinationRegister, getMemory(inst.SourceRegister1)*getMemory(inst.SourceRegister2))
+func executeMul() {
+	if !isImm {
+		setMemory(dst, getMemory(src1)*getMemory(src2))
 	} else {
-		setMemory(inst.DestinationRegister, getMemory(inst.SourceRegister1)*ValueWidth(inst.ImmediateValue))
+		setMemory(dst, getMemory(src1)*ValueWidth(ValueWidth(currInst.ImmediateValue)))
 	}
 }
 
-func executeDiv(inst *Instruction) {
-	if !inst.IsImmediate {
-		setMemory(inst.DestinationRegister, getMemory(inst.SourceRegister1)/getMemory(inst.SourceRegister2))
+func executeDiv() {
+	if !isImm {
+		setMemory(dst, getMemory(src1)/getMemory(src2))
 	} else {
-		setMemory(inst.DestinationRegister, getMemory(inst.SourceRegister1)/ValueWidth(inst.ImmediateValue))
+		setMemory(dst, getMemory(src1)/ValueWidth(ValueWidth(currInst.ImmediateValue)))
 	}
 }
 
-func executeMod(inst *Instruction) {
-	if !inst.IsImmediate {
-		setMemory(inst.DestinationRegister, getMemory(inst.SourceRegister1)%getMemory(inst.SourceRegister2))
+func executeMod() {
+	if !isImm {
+		setMemory(dst, getMemory(src1)%getMemory(src2))
 	} else {
-		setMemory(inst.DestinationRegister, getMemory(inst.SourceRegister1)%ValueWidth(inst.ImmediateValue))
+		setMemory(dst, getMemory(src1)%ValueWidth(ValueWidth(currInst.ImmediateValue)))
 	}
 }
 
-func executeNeg(inst *Instruction) {
-	if !inst.IsImmediate {
-		setMemory(inst.DestinationRegister, -1*getMemory(inst.SourceRegister1))
+func executeNeg() {
+	if !isImm {
+		setMemory(dst, -1*getMemory(src1))
 	} else {
-		setMemory(inst.DestinationRegister, -1*ValueWidth(inst.ImmediateValue))
+		setMemory(dst, -1*ValueWidth(ValueWidth(currInst.ImmediateValue)))
 	}
 }
 
-func executeAnd(inst *Instruction) {
-	if !inst.IsImmediate {
-		setMemory(inst.DestinationRegister, getMemory(inst.SourceRegister1)&getMemory(inst.SourceRegister2))
+func executeAnd() {
+	if !isImm {
+		setMemory(dst, getMemory(src1)&getMemory(src2))
 	} else {
-		setMemory(inst.DestinationRegister, getMemory(inst.SourceRegister1)&ValueWidth(inst.ImmediateValue))
+		setMemory(dst, getMemory(src1)&ValueWidth(ValueWidth(currInst.ImmediateValue)))
 	}
 }
 
-func executeOr(inst *Instruction) {
-	if !inst.IsImmediate {
-		setMemory(inst.DestinationRegister, getMemory(inst.SourceRegister1)|getMemory(inst.SourceRegister2))
+func executeOr() {
+	if !isImm {
+		setMemory(dst, getMemory(src1)|getMemory(src2))
 	} else {
-		setMemory(inst.DestinationRegister, getMemory(inst.SourceRegister1)|ValueWidth(inst.ImmediateValue))
+		setMemory(dst, getMemory(src1)|ValueWidth(ValueWidth(currInst.ImmediateValue)))
 	}
 }
 
-func executeNot(inst *Instruction) {
-	if !inst.IsImmediate {
-		setMemory(inst.DestinationRegister, negateValue(valueToBool(getMemory(inst.SourceRegister1))))
+func executeNot() {
+	if !isImm {
+		setMemory(dst, negateValue(valueToBool(getMemory(src1))))
 	} else {
-		setMemory(inst.DestinationRegister, negateValue(valueToBool(ValueWidth((inst.ImmediateValue)))))
+		setMemory(dst, negateValue(valueToBool(ValueWidth((ValueWidth(currInst.ImmediateValue))))))
 	}
 }
 
-func executeXor(inst *Instruction) {
-	if !inst.IsImmediate {
-		setMemory(inst.DestinationRegister, getMemory(inst.SourceRegister1)^getMemory(inst.SourceRegister2))
+func executeXor() {
+	if !isImm {
+		setMemory(dst, getMemory(src1)^getMemory(src2))
 	} else {
-		setMemory(inst.DestinationRegister, getMemory(inst.SourceRegister1)^ValueWidth(inst.ImmediateValue))
+		setMemory(dst, getMemory(src1)^ValueWidth(ValueWidth(currInst.ImmediateValue)))
 	}
 }
 
-func executeCall(inst *Instruction) {
-	ReturnStack.Push(PC + 1)
-	PC = inst.LabelImmediate
+func executeCall() {
+	ReturnStack.Push(PC)
+	PC = currInst.LabelImmediate
 	ContextNumber++
+	MemoryOffset = RegisterDepth(ContextNumber)*CONTEXT_SIZE - 1
 	// See if we need to bump up the memory
-	if (ContextNumber)*CONTEXT_SIZE >= len(Memory) {
+	if int(MemoryOffset) >= len(Memory) {
 		newMemory := make([]ValueWidth, len(Memory)*2)
 		copy(newMemory, Memory)
 		Memory = newMemory
 	}
 }
 
-func executeJump(inst *Instruction) {
-	PC = InstructionDepth(inst.LabelImmediate)
+func executeJump() {
+	PC = InstructionDepth(currInst.LabelImmediate)
 }
 
-func executeReturn(inst *Instruction) {
+func executeReturn() {
 	PC = ReturnStack.Pop()
 	ContextNumber--
+	MemoryOffset = RegisterDepth(ContextNumber)*CONTEXT_SIZE - 1
 }
 
-func executeGreater(inst *Instruction) {
-	if !inst.IsImmediate {
-		setMemory(inst.DestinationRegister, boolToValue(getMemory(inst.SourceRegister1) > getMemory(inst.SourceRegister2)))
+func executeGreater() {
+	if !isImm {
+		setMemory(dst, boolToValue(getMemory(src1) > getMemory(src2)))
 	} else {
-		setMemory(inst.DestinationRegister, boolToValue(getMemory(inst.SourceRegister1) > ValueWidth(inst.ImmediateValue)))
+		setMemory(dst, boolToValue(getMemory(src1) > ValueWidth(ValueWidth(currInst.ImmediateValue))))
 	}
 }
 
-func executeGreaterEqual(inst *Instruction) {
-	if !inst.IsImmediate {
-		setMemory(inst.DestinationRegister, boolToValue(getMemory(inst.SourceRegister1) >= getMemory(inst.SourceRegister2)))
+func executeGreaterEqual() {
+	if !isImm {
+		setMemory(dst, boolToValue(getMemory(src1) >= getMemory(src2)))
 	} else {
-		setMemory(inst.DestinationRegister, boolToValue(getMemory(inst.SourceRegister1) >= ValueWidth(inst.ImmediateValue)))
+		setMemory(dst, boolToValue(getMemory(src1) >= ValueWidth(ValueWidth(currInst.ImmediateValue))))
 	}
 }
 
-func executeLess(inst *Instruction) {
-	if !inst.IsImmediate {
-		setMemory(inst.DestinationRegister, boolToValue(getMemory(inst.SourceRegister1) < getMemory(inst.SourceRegister2)))
+func executeLess() {
+	if !isImm {
+		setMemory(dst, boolToValue(getMemory(src1) < getMemory(src2)))
 	} else {
-		setMemory(inst.DestinationRegister, boolToValue(getMemory(inst.SourceRegister1) < ValueWidth(inst.ImmediateValue)))
+		setMemory(dst, boolToValue(getMemory(src1) < ValueWidth(ValueWidth(currInst.ImmediateValue))))
 	}
 }
 
-func executeLessEqual(inst *Instruction) {
-	if !inst.IsImmediate {
-		setMemory(inst.DestinationRegister, boolToValue(getMemory(inst.SourceRegister1) <= getMemory(inst.SourceRegister2)))
+func executeLessEqual() {
+	if !isImm {
+		setMemory(dst, boolToValue(getMemory(src1) <= getMemory(src2)))
 	} else {
-		setMemory(inst.DestinationRegister, boolToValue(getMemory(inst.SourceRegister1) <= ValueWidth(inst.ImmediateValue)))
+		setMemory(dst, boolToValue(getMemory(src1) <= ValueWidth(ValueWidth(currInst.ImmediateValue))))
 	}
 }
 
-func executeEqual(inst *Instruction) {
-	if !inst.IsImmediate {
-		setMemory(inst.DestinationRegister, boolToValue(getMemory(inst.SourceRegister1) == getMemory(inst.SourceRegister2)))
+func executeEqual() {
+	if !isImm {
+		setMemory(dst, boolToValue(getMemory(src1) == getMemory(src2)))
 	} else {
-		setMemory(inst.DestinationRegister, boolToValue(getMemory(inst.SourceRegister1) == ValueWidth(inst.ImmediateValue)))
+		setMemory(dst, boolToValue(getMemory(src1) == ValueWidth(ValueWidth(currInst.ImmediateValue))))
 	}
 }
 
-func executeNotEqual(inst *Instruction) {
-	if !inst.IsImmediate {
-		setMemory(inst.DestinationRegister, boolToValue(getMemory(inst.SourceRegister1) != getMemory(inst.SourceRegister2)))
+func executeNotEqual() {
+	if !isImm {
+		setMemory(dst, boolToValue(getMemory(src1) != getMemory(src2)))
 	} else {
-		setMemory(inst.DestinationRegister, boolToValue(getMemory(inst.SourceRegister1) != ValueWidth(inst.ImmediateValue)))
+		setMemory(dst, boolToValue(getMemory(src1) != ValueWidth(ValueWidth(currInst.ImmediateValue))))
 	}
 }
 
-func executeJumpIfTrue(inst *Instruction) {
-	if !inst.IsImmediate {
-		if getMemory(inst.SourceRegister1) != 0 {
-			PC = inst.LabelImmediate
+func executeJumpIfTrue() {
+	if !isImm {
+		if getMemory(src1) != 0 {
+			PC = currInst.LabelImmediate
 		}
 	} else {
-		if inst.ImmediateValue != 0 {
-			PC = inst.LabelImmediate
-		}
-	}
-}
-
-func executeJumpIfFalse(inst *Instruction) {
-	if !inst.IsImmediate {
-		if getMemory(inst.SourceRegister1) == 0 {
-			PC = inst.LabelImmediate
-		}
-	} else {
-		if inst.ImmediateValue == 0 {
-			PC = inst.LabelImmediate
+		if imm != 0 {
+			PC = currInst.LabelImmediate
 		}
 	}
 }
 
-func executePush(inst *Instruction) {
-	if !inst.IsImmediate {
-		Stack.Push(getMemory(inst.SourceRegister1))
+func executeJumpIfFalse() {
+	if !isImm {
+		if getMemory(src1) == 0 {
+			PC = currInst.LabelImmediate
+		}
 	} else {
-		Stack.Push(ValueWidth(inst.ImmediateValue))
+		if imm == 0 {
+			PC = currInst.LabelImmediate
+		}
 	}
 }
 
-func executePop(inst *Instruction) {
-	setMemory(inst.DestinationRegister, Stack.Pop())
+func executePush() {
+	if !isImm {
+		Stack.Push(getMemory(src1))
+	} else {
+		Stack.Push(ValueWidth(ValueWidth(currInst.ImmediateValue)))
+	}
 }
 
-func executeHalt(inst *Instruction) {
-	if !inst.IsImmediate {
-		HaltValue = getMemory(inst.SourceRegister1)
+func executePop() {
+	setMemory(dst, Stack.Pop())
+}
+
+func executeHalt() {
+	if !isImm {
+		HaltValue = getMemory(src1)
 	} else {
-		HaltValue = ValueWidth(inst.ImmediateValue)
+		HaltValue = ValueWidth(ValueWidth(currInst.ImmediateValue))
 	}
 	Halted = true
 }
 
 // executeNop does nothing
-func executeNop(inst *Instruction) {}
+func executeNop() {}
 
-func executeTODO(inst *Instruction) {
+func executeTODO() {
 	panic("executed TODO")
 }
 
@@ -300,9 +310,9 @@ func negateValue(what ValueWidth) ValueWidth {
 }
 
 func setMemory(reg RegisterDepth, val ValueWidth) {
-	Memory[RegisterDepth(ContextNumber)*CONTEXT_SIZE+reg-1] = val
+	Memory[MemoryOffset+reg] = val
 }
 
 func getMemory(reg RegisterDepth) ValueWidth {
-	return Memory[RegisterDepth(ContextNumber)*CONTEXT_SIZE+reg-1]
+	return Memory[MemoryOffset+reg]
 }
