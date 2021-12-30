@@ -1,14 +1,25 @@
 package main
 
+type LabelType string
+
+type ContextDepth uint16
+type InstructionDepth uint32
+type RegisterDepth uint16
+
+type ImmediateWidth uint32
+type ValueWidth int64
+
 type Instruction struct {
 	Opcode              OpcodeNumber
-	NumRegs             uint8
-	SourceRegister1     uint16
-	SourceRegister2     uint16
-	DestinationRegister uint16
+	NumberOperands      uint8
+	SourceRegister1     RegisterDepth
+	SourceRegister2     RegisterDepth
+	DestinationRegister RegisterDepth
 
 	IsImmediate    bool
-	ImmediateValue int32
+	ImmediateValue ImmediateWidth
 
-	LabelImmediate string
+	LabelImmediate LabelType
+
+	//	Input string
 }

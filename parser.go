@@ -28,7 +28,6 @@ var (
 // ParseInput takes lines of assembly and returns instructions
 func ParseInput(lines []string) []*Instruction {
 	instructions := make([]*Instruction, 0)
-
 	for _, line := range lines {
 		// Clean from comments
 		line = CommentRegex.ReplaceAllString(line, "")
@@ -42,10 +41,9 @@ func ParseInput(lines []string) []*Instruction {
 		// Try to extract labels if there are any
 		matches := LabelDeclarationRegex.FindAllStringSubmatch(line, -1)
 		if len(matches) > 0 {
-			Labels[matches[0][1]] = uint32(len(instructions) - 1)
+			Labels[LabelType(matches[0][1])] = InstructionDepth((len(instructions) - 1))
 		}
 	}
-
 	return instructions
 }
 
@@ -69,23 +67,24 @@ func ParseInstruction(line string) *Instruction {
 
 func formInstruction(line string, numRegs uint8, opcode OpcodeNumber) (what *Instruction) {
 	what = &Instruction{
-		Opcode:      opcode,
-		NumRegs:     numRegs,
-		IsImmediate: strings.Contains(line, "i "),
+		Opcode:         opcode,
+		NumberOperands: numRegs,
+		IsImmediate:    strings.Contains(line, "i "),
+		//		Input:          line,
 	}
 
 	//fmt.Println(line, " -- ", numRegs, " -- ", opcode)
 
-	if what.NumRegs == 3 {
+	if what.NumberOperands == 3 {
 		if !what.IsImmediate {
 			matches := ThreeRegisterRegex.FindAllStringSubmatch(line, -1)
 			if len(matches) < 1 {
 				panic("three register regex match failed")
 			}
 			registers := matches[0]
-			what.SourceRegister1 = strToRegNum(registers[1])
-			what.SourceRegister2 = strToRegNum(registers[2])
-			what.DestinationRegister = strToRegNum(registers[3])
+			what.SourceRegister1 = stringToRegister(registers[1])
+			what.SourceRegister2 = stringToRegister(registers[2])
+			what.DestinationRegister = stringToRegister(registers[3])
 		}
 		if what.IsImmediate {
 			matches := ThreeImmediateRegex.FindAllStringSubmatch(line, -1)
@@ -93,24 +92,24 @@ func formInstruction(line string, numRegs uint8, opcode OpcodeNumber) (what *Ins
 				panic("three immediate regex match failed")
 			}
 			values := matches[0]
-			what.SourceRegister1 = strToRegNum(values[1])
-			what.ImmediateValue = strToInt32(values[2])
-			what.DestinationRegister = strToRegNum(values[3])
+			what.SourceRegister1 = stringToRegister(values[1])
+			what.ImmediateValue = stringToImmediate(values[2])
+			what.DestinationRegister = stringToRegister(values[3])
 		}
 		return
 	}
 
-	if what.NumRegs == 2 {
+	if what.NumberOperands == 2 {
 		// See if we're doing the JUMPIF
-		if what.Opcode == JUMPIF {
+		if what.Opcode == JUMPF || what.Opcode == JUMPT {
 			if !what.IsImmediate {
 				matches := ConditionalJumpRegisterRegex.FindAllStringSubmatch(line, -1)
 				if len(matches) < 1 {
 					panic("conditional jump register regex match failed")
 				}
 				values := matches[0]
-				what.SourceRegister1 = strToRegNum(values[1])
-				what.LabelImmediate = values[2]
+				what.SourceRegister1 = stringToRegister(values[1])
+				what.LabelImmediate = LabelType(values[2])
 			}
 			if what.IsImmediate {
 				matches := ConditionalJumpImmediateRegex.FindAllStringSubmatch(line, -1)
@@ -118,8 +117,8 @@ func formInstruction(line string, numRegs uint8, opcode OpcodeNumber) (what *Ins
 					panic("conditional jump immediate regex match failed")
 				}
 				values := matches[0]
-				what.ImmediateValue = strToInt32(values[1])
-				what.LabelImmediate = values[2]
+				what.ImmediateValue = stringToImmediate(values[1])
+				what.LabelImmediate = LabelType(values[2])
 			}
 			return
 		}
@@ -130,8 +129,8 @@ func formInstruction(line string, numRegs uint8, opcode OpcodeNumber) (what *Ins
 				panic("two register regex match failed")
 			}
 			registers := matches[0]
-			what.SourceRegister1 = strToRegNum(registers[1])
-			what.DestinationRegister = strToRegNum(registers[2])
+			what.SourceRegister1 = stringToRegister(registers[1])
+			what.DestinationRegister = stringToRegister(registers[2])
 		}
 		if what.IsImmediate {
 			matches := TwoImmediateRegex.FindAllStringSubmatch(line, -1)
@@ -139,20 +138,20 @@ func formInstruction(line string, numRegs uint8, opcode OpcodeNumber) (what *Ins
 				panic("two immediate regex match failed")
 			}
 			values := matches[0]
-			what.ImmediateValue = strToInt32(values[1])
-			what.DestinationRegister = strToRegNum(values[2])
+			what.ImmediateValue = stringToImmediate(values[1])
+			what.DestinationRegister = stringToRegister(values[2])
 		}
 		return
 	}
 
-	if what.NumRegs == 1 {
+	if what.NumberOperands == 1 {
 		// Call or jump
 		if what.Opcode == CALL || what.Opcode == JUMP {
 			matches := LabelImmediateRegex.FindAllStringSubmatch(line, -1)
 			if len(matches) < 1 {
 				panic("call regex match failed")
 			}
-			what.LabelImmediate = matches[0][1]
+			what.LabelImmediate = LabelType(matches[0][1])
 			return
 		}
 		// Push
@@ -162,14 +161,14 @@ func formInstruction(line string, numRegs uint8, opcode OpcodeNumber) (what *Ins
 				if len(matches) < 1 {
 					panic("push immediate regex match failed")
 				}
-				what.ImmediateValue = strToInt32(matches[0][1])
+				what.ImmediateValue = stringToImmediate(matches[0][1])
 			}
 			if !what.IsImmediate {
 				matches := OneRegisterRegex.FindAllStringSubmatch(line, -1)
 				if len(matches) < 1 {
 					panic("push register regex match failed")
 				}
-				what.SourceRegister1 = strToRegNum(matches[0][1])
+				what.SourceRegister1 = stringToRegister(matches[0][1])
 			}
 			return
 		}
@@ -179,7 +178,7 @@ func formInstruction(line string, numRegs uint8, opcode OpcodeNumber) (what *Ins
 			if len(matches) < 1 {
 				panic("pop register regex match failed")
 			}
-			what.DestinationRegister = strToRegNum(matches[0][1])
+			what.DestinationRegister = stringToRegister(matches[0][1])
 			return
 		}
 		// Halt
@@ -189,14 +188,14 @@ func formInstruction(line string, numRegs uint8, opcode OpcodeNumber) (what *Ins
 				if len(matches) < 1 {
 					panic("halt immediate regex match failed")
 				}
-				what.ImmediateValue = strToInt32(matches[0][1])
+				what.ImmediateValue = stringToImmediate(matches[0][1])
 			}
 			if !what.IsImmediate {
 				matches := OneRegisterRegex.FindAllStringSubmatch(line, -1)
 				if len(matches) < 1 {
 					panic("halt register regex match failed")
 				}
-				what.SourceRegister1 = strToRegNum(matches[0][1])
+				what.SourceRegister1 = stringToRegister(matches[0][1])
 			}
 			return
 		}
@@ -206,12 +205,12 @@ func formInstruction(line string, numRegs uint8, opcode OpcodeNumber) (what *Ins
 
 var dummyInt = 0
 
-func strToRegNum(register string) uint16 {
+func stringToRegister(register string) RegisterDepth {
 	dummyInt, _ = strconv.Atoi(register)
-	return uint16(dummyInt)
+	return RegisterDepth(dummyInt)
 }
 
-func strToInt32(what string) int32 {
+func stringToImmediate(what string) ImmediateWidth {
 	dummyInt, _ = strconv.Atoi(what)
-	return int32(dummyInt)
+	return ImmediateWidth(dummyInt)
 }

@@ -19,7 +19,7 @@ func TestParseInstruction(t *testing.T) {
 			args{"add #1, #2, #3"},
 			&Instruction{
 				Opcode:              ADD,
-				NumRegs:             3,
+				NumberOperands:      3,
 				SourceRegister1:     1,
 				SourceRegister2:     2,
 				DestinationRegister: 3,
@@ -32,7 +32,7 @@ func TestParseInstruction(t *testing.T) {
 			args{"addi #1, 2, #3"},
 			&Instruction{
 				Opcode:              ADD,
-				NumRegs:             2,
+				NumberOperands:      2,
 				SourceRegister1:     1,
 				SourceRegister2:     0,
 				DestinationRegister: 3,

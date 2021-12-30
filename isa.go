@@ -29,7 +29,8 @@ const (
 	EQUAL
 	NOT_EQUAL
 	// Conditional jumps
-	JUMPIF
+	JUMPT
+	JUMPF
 	// Stack
 	PUSH
 	POP
@@ -59,7 +60,8 @@ var (
 		LESS_EQ:    "lte",
 		EQUAL:      "eq",
 		NOT_EQUAL:  "neq",
-		JUMPIF:     "jmpz",
+		JUMPT:      "jmpt",
+		JUMPF:      "jmpz",
 		PUSH:       "push",
 		POP:        "pop",
 		NOP:        "nop",
@@ -86,7 +88,8 @@ var (
 		LESS_EQ:    3, // lte s1, s2, d
 		EQUAL:      3, // eq  s1, s2, d
 		NOT_EQUAL:  3, // neq s1, s2, d
-		JUMPIF:     2, // jmpz s1, LABEL (jump to LABEL if 0)
+		JUMPT:      2, // jmmp s1, LABEL (jump to LABEL if 1)
+		JUMPF:      2, // jmpz s1, LABEL (jump to LABEL if 0)
 		PUSH:       1, // push VAL (s1)
 		POP:        1, // pop MEM (d)
 		NOP:        0, // nop
