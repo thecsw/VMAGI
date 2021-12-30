@@ -202,7 +202,7 @@ func executeReturn(inst *Instruction) {
 
 func executeGreater(inst *Instruction) {
 	if !inst.IsImmediate {
-		setMemory(inst.DestinationRegister, boolToValue(getMemory(inst.SourceRegister1) > ValueWidth(inst.ImmediateValue)))
+		setMemory(inst.DestinationRegister, boolToValue(getMemory(inst.SourceRegister1) > getMemory(inst.SourceRegister2)))
 	} else {
 		setMemory(inst.DestinationRegister, boolToValue(getMemory(inst.SourceRegister1) > ValueWidth(inst.ImmediateValue)))
 	}
@@ -210,7 +210,7 @@ func executeGreater(inst *Instruction) {
 
 func executeGreaterEqual(inst *Instruction) {
 	if !inst.IsImmediate {
-		setMemory(inst.DestinationRegister, boolToValue(getMemory(inst.SourceRegister1) >= ValueWidth(inst.ImmediateValue)))
+		setMemory(inst.DestinationRegister, boolToValue(getMemory(inst.SourceRegister1) >= getMemory(inst.SourceRegister2)))
 	} else {
 		setMemory(inst.DestinationRegister, boolToValue(getMemory(inst.SourceRegister1) >= ValueWidth(inst.ImmediateValue)))
 	}
@@ -218,7 +218,7 @@ func executeGreaterEqual(inst *Instruction) {
 
 func executeLess(inst *Instruction) {
 	if !inst.IsImmediate {
-		setMemory(inst.DestinationRegister, boolToValue(getMemory(inst.SourceRegister1) < ValueWidth(inst.ImmediateValue)))
+		setMemory(inst.DestinationRegister, boolToValue(getMemory(inst.SourceRegister1) < getMemory(inst.SourceRegister2)))
 	} else {
 		setMemory(inst.DestinationRegister, boolToValue(getMemory(inst.SourceRegister1) < ValueWidth(inst.ImmediateValue)))
 	}
@@ -226,7 +226,7 @@ func executeLess(inst *Instruction) {
 
 func executeLessEqual(inst *Instruction) {
 	if !inst.IsImmediate {
-		setMemory(inst.DestinationRegister, boolToValue(getMemory(inst.SourceRegister1) <= ValueWidth(inst.ImmediateValue)))
+		setMemory(inst.DestinationRegister, boolToValue(getMemory(inst.SourceRegister1) <= getMemory(inst.SourceRegister2)))
 	} else {
 		setMemory(inst.DestinationRegister, boolToValue(getMemory(inst.SourceRegister1) <= ValueWidth(inst.ImmediateValue)))
 	}
@@ -234,7 +234,7 @@ func executeLessEqual(inst *Instruction) {
 
 func executeEqual(inst *Instruction) {
 	if !inst.IsImmediate {
-		setMemory(inst.DestinationRegister, boolToValue(getMemory(inst.SourceRegister1) == ValueWidth(inst.ImmediateValue)))
+		setMemory(inst.DestinationRegister, boolToValue(getMemory(inst.SourceRegister1) == getMemory(inst.SourceRegister2)))
 	} else {
 		setMemory(inst.DestinationRegister, boolToValue(getMemory(inst.SourceRegister1) == ValueWidth(inst.ImmediateValue)))
 	}
@@ -242,7 +242,7 @@ func executeEqual(inst *Instruction) {
 
 func executeNotEqual(inst *Instruction) {
 	if !inst.IsImmediate {
-		setMemory(inst.DestinationRegister, boolToValue(getMemory(inst.SourceRegister1) != ValueWidth(inst.ImmediateValue)))
+		setMemory(inst.DestinationRegister, boolToValue(getMemory(inst.SourceRegister1) != getMemory(inst.SourceRegister2)))
 	} else {
 		setMemory(inst.DestinationRegister, boolToValue(getMemory(inst.SourceRegister1) != ValueWidth(inst.ImmediateValue)))
 	}
