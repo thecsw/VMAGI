@@ -86,7 +86,7 @@ func formInstruction(line string, numRegs uint8, opcode OpcodeNumber) (what *Ins
 		Opcode:         opcode,
 		NumberOperands: numRegs,
 		IsImmediate:    strings.Contains(line, "i "),
-		Input:          line,
+		//		Input:          line,
 	}
 
 	//fmt.Println(line, " -- ", numRegs, " -- ", opcode)

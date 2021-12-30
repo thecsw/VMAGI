@@ -32,11 +32,19 @@ var (
 )
 
 func Execute(instructions []*Instruction) {
+	// Init the execution function array generated from the map
+	for i := OpcodeNumber(0); i <= NOP; i++ {
+		executeFunctions[i] = executeFunctionsMap[i]
+	}
+
+	// Init the stacks
 	Stack.Init(STACK_DEPTH)
 	ReturnStack.Init(RETURN_STACK_DEPTH)
+
+	// Start going through instructions
 	var currentPC InstructionDepth
 	var currentInstruction *Instruction
-	for PC < InstructionDepth((len(instructions))) {
+	for {
 		currentPC = PC
 		currentInstruction = instructions[PC]
 
@@ -60,7 +68,7 @@ func Execute(instructions []*Instruction) {
 }
 
 var (
-	executeFunctions = map[OpcodeNumber]func(*Instruction){
+	executeFunctionsMap = map[OpcodeNumber]func(*Instruction){
 		HALT:       executeHalt,
 		ADD:        executeAdd,
 		SUB:        executeSub,
@@ -87,6 +95,8 @@ var (
 		POP:        executePop,
 		NOP:        executeNop,
 	}
+
+	executeFunctions = make([]func(*Instruction), len(executeFunctionsMap))
 )
 
 func executeAdd(inst *Instruction) {
@@ -175,7 +185,9 @@ func executeCall(inst *Instruction) {
 	ContextNumber++
 	// See if we need to bump up the memory
 	if (ContextNumber)*CONTEXT_SIZE >= len(Memory) {
-		Memory = append(Memory, 0)
+		newMemory := make([]ValueWidth, len(Memory)*2)
+		copy(newMemory, Memory)
+		Memory = newMemory
 	}
 }
 

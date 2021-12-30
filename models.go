@@ -25,5 +25,5 @@ type Instruction struct {
 
 	//LabelImmediate LabelType
 
-	Input string
+	//Input string
 }
