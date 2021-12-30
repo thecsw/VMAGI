@@ -2,7 +2,7 @@ package main
 
 type LabelType string
 
-type ContextDepth uint16
+type LabelDepth uint16
 type InstructionDepth uint32
 type RegisterDepth uint16
 
@@ -19,7 +19,11 @@ type Instruction struct {
 	IsImmediate    bool
 	ImmediateValue ImmediateWidth
 
-	LabelImmediate LabelType
+	LabelIndex LabelDepth
 
-	//	Input string
+	LabelImmediate InstructionDepth
+
+	//LabelImmediate LabelType
+
+	Input string
 }

@@ -5,10 +5,12 @@ import (
 	"io/ioutil"
 	"os"
 	"strings"
+
+	"github.com/pkg/profile"
 )
 
 func main() {
-	//defer profile.Start(profile.CPUProfile, profile.ProfilePath(".")).Stop()
+	defer profile.Start(profile.CPUProfile, profile.ProfilePath(".")).Stop()
 
 	if len(os.Args) != 2 {
 		fmt.Println("Usage: VMAGI <INPUT FILE>")

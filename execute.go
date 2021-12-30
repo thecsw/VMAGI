@@ -1,6 +1,7 @@
 package main
 
 const (
+	MEMORY_DEPTH       = 10000
 	STACK_DEPTH        = 10000
 	RETURN_STACK_DEPTH = 10000
 
@@ -8,11 +9,15 @@ const (
 )
 
 var (
-	Memory = map[RegisterDepth]ValueWidth{}
+	//Memory = map[RegisterDepth]ValueWidth{}
+	Memory = make([]ValueWidth, MEMORY_DEPTH)
+
 	//ContextNumber = ContextDepth(0)
 	MemoryOffset = RegisterDepth(0)
 
-	Labels = map[LabelType]InstructionDepth{}
+	//Labels = make([]InstructionDepth, 100)
+	//Labels = map[LabelType]InstructionDepth{}
+	//Labels = freecache.NewCache(10 * 1024 * 1024)
 
 	Stack = &Stack64{}
 
@@ -20,21 +25,30 @@ var (
 
 	PC = InstructionDepth(0)
 
-	HaltValue     ValueWidth
-	Halted        bool
+	HaltValue ValueWidth
+	Halted    bool
+
 	ContextNumber = 0
 )
 
 func Execute(instructions []*Instruction) {
-
 	Stack.Init(STACK_DEPTH)
 	ReturnStack.Init(RETURN_STACK_DEPTH)
-
 	var currentPC InstructionDepth
 	var currentInstruction *Instruction
 	for PC < InstructionDepth((len(instructions))) {
 		currentPC = PC
 		currentInstruction = instructions[PC]
+
+		// fmt.Println("----------- STACK -----------")
+		// litter.Dump(Stack.Array[:10])
+		// fmt.Println("----------- MEMORY -----------")
+		// litter.Dump(Memory[RegisterDepth(ContextNumber)*CONTEXT_SIZE : RegisterDepth(ContextNumber)*(CONTEXT_SIZE)+10])
+		// fmt.Println("----------- RUNNING -----------")
+		// fmt.Println(currentInstruction.Input)
+		// fmt.Println(currentInstruction.LabelIndex)
+		// fmt.Println(currentInstruction.LabelImmediate)
+
 		executeFunctions[currentInstruction.Opcode](currentInstruction)
 		if currentPC == PC {
 			PC++
@@ -157,12 +171,16 @@ func executeXor(inst *Instruction) {
 
 func executeCall(inst *Instruction) {
 	ReturnStack.Push(PC + 1)
-	PC = Labels[inst.LabelImmediate]
+	PC = inst.LabelImmediate
 	ContextNumber++
+	// See if we need to bump up the memory
+	if (ContextNumber)*CONTEXT_SIZE >= len(Memory) {
+		Memory = append(Memory, 0)
+	}
 }
 
 func executeJump(inst *Instruction) {
-	PC = Labels[inst.LabelImmediate]
+	PC = InstructionDepth(inst.LabelImmediate)
 }
 
 func executeReturn(inst *Instruction) {
@@ -221,11 +239,11 @@ func executeNotEqual(inst *Instruction) {
 func executeJumpIfTrue(inst *Instruction) {
 	if !inst.IsImmediate {
 		if getMemory(inst.SourceRegister1) != 0 {
-			PC = Labels[inst.LabelImmediate]
+			PC = inst.LabelImmediate
 		}
 	} else {
 		if inst.ImmediateValue != 0 {
-			PC = Labels[inst.LabelImmediate]
+			PC = inst.LabelImmediate
 		}
 	}
 }
@@ -233,11 +251,11 @@ func executeJumpIfTrue(inst *Instruction) {
 func executeJumpIfFalse(inst *Instruction) {
 	if !inst.IsImmediate {
 		if getMemory(inst.SourceRegister1) == 0 {
-			PC = Labels[inst.LabelImmediate]
+			PC = inst.LabelImmediate
 		}
 	} else {
 		if inst.ImmediateValue == 0 {
-			PC = Labels[inst.LabelImmediate]
+			PC = inst.LabelImmediate
 		}
 	}
 }

@@ -23,11 +23,16 @@ var (
 	ConditionalJumpImmediateRegex = regexp.MustCompile(`i \s*(\d+)\s*,\s*@([^:]+)\s*`)
 
 	CommentRegex = regexp.MustCompile(`--.+`)
+
+	LabelMap    = map[string]LabelDepth{}
+	Labels      = make([]InstructionDepth, 100)
+	FoundLabels = 1
 )
 
 // ParseInput takes lines of assembly and returns instructions
 func ParseInput(lines []string) []*Instruction {
 	instructions := make([]*Instruction, 0)
+
 	for _, line := range lines {
 		// Clean from comments
 		line = CommentRegex.ReplaceAllString(line, "")
@@ -41,9 +46,20 @@ func ParseInput(lines []string) []*Instruction {
 		// Try to extract labels if there are any
 		matches := LabelDeclarationRegex.FindAllStringSubmatch(line, -1)
 		if len(matches) > 0 {
-			Labels[LabelType(matches[0][1])] = InstructionDepth((len(instructions) - 1))
+			addNewLabel(matches[0][1])
+			setLabel(matches[0][1], InstructionDepth(len(instructions)-1))
 		}
 	}
+	// Fill out labelImmediates
+
+	for i, v := range instructions {
+		if v.LabelIndex > 0 {
+			instructions[i].LabelImmediate = Labels[v.LabelIndex]
+		}
+	}
+
+	//	litter.Dump(LabelMap)
+	// litter.Dump(Labels)
 	return instructions
 }
 
@@ -70,7 +86,7 @@ func formInstruction(line string, numRegs uint8, opcode OpcodeNumber) (what *Ins
 		Opcode:         opcode,
 		NumberOperands: numRegs,
 		IsImmediate:    strings.Contains(line, "i "),
-		//		Input:          line,
+		Input:          line,
 	}
 
 	//fmt.Println(line, " -- ", numRegs, " -- ", opcode)
@@ -109,7 +125,8 @@ func formInstruction(line string, numRegs uint8, opcode OpcodeNumber) (what *Ins
 				}
 				values := matches[0]
 				what.SourceRegister1 = stringToRegister(values[1])
-				what.LabelImmediate = LabelType(values[2])
+				what.LabelIndex = addNewLabel(values[2])
+				//what.LabelImmediate = labelToInstruction(values[2])
 			}
 			if what.IsImmediate {
 				matches := ConditionalJumpImmediateRegex.FindAllStringSubmatch(line, -1)
@@ -118,7 +135,8 @@ func formInstruction(line string, numRegs uint8, opcode OpcodeNumber) (what *Ins
 				}
 				values := matches[0]
 				what.ImmediateValue = stringToImmediate(values[1])
-				what.LabelImmediate = LabelType(values[2])
+				what.LabelIndex = addNewLabel(values[2])
+				//what.LabelImmediate = labelToInstruction(values[2])
 			}
 			return
 		}
@@ -151,7 +169,8 @@ func formInstruction(line string, numRegs uint8, opcode OpcodeNumber) (what *Ins
 			if len(matches) < 1 {
 				panic("call regex match failed")
 			}
-			what.LabelImmediate = LabelType(matches[0][1])
+			what.LabelIndex = addNewLabel(matches[0][1])
+			//what.LabelImmediate = addNewLabel(matches[0][1])
 			return
 		}
 		// Push
@@ -213,4 +232,22 @@ func stringToRegister(register string) RegisterDepth {
 func stringToImmediate(what string) ImmediateWidth {
 	dummyInt, _ = strconv.Atoi(what)
 	return ImmediateWidth(dummyInt)
+}
+
+func addNewLabel(what string) LabelDepth {
+	if v, ok := LabelMap[what]; !ok {
+		LabelMap[what] = LabelDepth(FoundLabels)
+		FoundLabels++
+		return LabelDepth(FoundLabels) - 1
+	} else {
+		return v
+	}
+}
+
+func setLabel(what string, instruction InstructionDepth) {
+	Labels[LabelMap[what]] = instruction
+}
+
+func labelToInstruction(what string) InstructionDepth {
+	return Labels[LabelMap[what]]
 }
