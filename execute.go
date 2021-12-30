@@ -41,9 +41,12 @@ func Execute(instructions []*Instruction) {
 		// fmt.Println(StackPointer)
 		// litter.Dump(Stack[:3])
 		// fmt.Println("\n------------------------")
+
 		currentPC = PC
 		currentInstruction = instructions[PC]
+
 		//fmt.Println("EXECUTING: ", PC, currentInstruction.Opcode)
+
 		executeFunctions[currentInstruction.Opcode](currentInstruction)
 		// No PC manipulation happened
 		if currentPC == PC {

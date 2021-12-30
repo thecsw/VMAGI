@@ -8,19 +8,19 @@ import (
 
 var (
 	ThreeRegisterRegex  = regexp.MustCompile(`\s*#(\d+)\s*,\s*#(\d+)\s*,\s*#(\d+)\s*`)
-	ThreeImmediateRegex = regexp.MustCompile(`\s*#(\d+)\s*,\s*(\d+)\s*,\s*#(\d+)\s*`)
+	ThreeImmediateRegex = regexp.MustCompile(`i \s*#(\d+)\s*,\s*(\d+)\s*,\s*#(\d+)\s*`)
 
 	TwoRegisterRegex  = regexp.MustCompile(`\s*#(\d+)\s*,\s*#(\d+)\s*`)
-	TwoImmediateRegex = regexp.MustCompile(`\s*#(\d+)\s*,\s*(\d+)\s*`)
+	TwoImmediateRegex = regexp.MustCompile(`i \s*#(\d+)\s*,\s*(\d+)\s*`)
 
 	OneRegisterRegex  = regexp.MustCompile(`\s*#(\d+)\s*`)
-	OneImmediateRegex = regexp.MustCompile(`\s*(\d+)\s*`)
+	OneImmediateRegex = regexp.MustCompile(`i \s*(\d+)\s*`)
 
 	LabelDeclarationRegex = regexp.MustCompile(`\s*([^:]+):\s*`)
 	LabelImmediateRegex   = regexp.MustCompile(`\s*@([^:]+)\s*`)
 
 	ConditionalJumpRegisterRegex  = regexp.MustCompile(`\s*#(\d+)\s*,\s*@([^:]+)\s*`)
-	ConditionalJumpImmediateRegex = regexp.MustCompile(`\s*(\d+)\s*,\s*@([^:]+)\s*`)
+	ConditionalJumpImmediateRegex = regexp.MustCompile(`i \s*(\d+)\s*,\s*@([^:]+)\s*`)
 
 	CommentRegex = regexp.MustCompile(`--.+`)
 )
@@ -75,6 +75,7 @@ func formInstruction(line string, numRegs uint8, opcode OpcodeNumber) (what *Ins
 	}
 
 	//fmt.Println(line, " -- ", numRegs, " -- ", opcode)
+
 	if what.NumRegs == 3 {
 		if !what.IsImmediate {
 			matches := ThreeRegisterRegex.FindAllStringSubmatch(line, -1)
@@ -100,7 +101,6 @@ func formInstruction(line string, numRegs uint8, opcode OpcodeNumber) (what *Ins
 	}
 
 	if what.NumRegs == 2 {
-
 		// See if we're doing the JUMPIF
 		if what.Opcode == JUMPIF {
 			if !what.IsImmediate {
