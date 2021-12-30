@@ -1,0 +1,7 @@
+        addi #1, 5, #1
+        push #1
+        call @fib
+        pop #2
+        halt #1
+
+fib:    nop

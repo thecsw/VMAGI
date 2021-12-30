@@ -1,0 +1,13 @@
+        addi #1, 10, #1  -- 0
+        addi #2, 20, #2  -- 1
+        push #2          -- 2
+        push #1          -- 3
+        call @add        -- 4
+        pop #3           -- 5
+        halt #3          -- 6
+
+add:    pop #1           -- 7
+        pop #2           -- 8
+        add #1, #2, #3   -- 9
+        push #3          -- 10
+        ret              -- 11
