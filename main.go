@@ -21,16 +21,4 @@ func main() {
 	instructions := ParseInput(lines)
 	Execute(instructions)
 	fmt.Printf("VMAGI stopped execution with %d\n", HaltValue)
-
-	// fmt.Println("========= LABELS")
-	// litter.Dump(Labels)
-	// fmt.Println("========= STACK")
-	// litter.Dump(StackPointer)
-	// litter.Dump(Stack[0:10])
-	// fmt.Println("========= MEMORY")
-	// litter.Dump(MemoryPointer)
-	// litter.Dump(Memory[MemoryPointer])
-	// fmt.Println("========= RETURNS")
-	// litter.Dump(ReturnStackPointer)
-	// litter.Dump(ReturnStack[0:10])
 }

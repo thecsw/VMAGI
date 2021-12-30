@@ -32,7 +32,6 @@ var (
 // ParseInput takes lines of assembly and returns instructions
 func ParseInput(lines []string) []*Instruction {
 	instructions := make([]*Instruction, 0)
-
 	for _, line := range lines {
 		// Clean from comments
 		line = CommentRegex.ReplaceAllString(line, "")
@@ -51,15 +50,12 @@ func ParseInput(lines []string) []*Instruction {
 		}
 	}
 	// Fill out labelImmediates
-
 	for i, v := range instructions {
 		if v.LabelIndex > 0 {
 			instructions[i].LabelImmediate = Labels[v.LabelIndex]
 		}
 	}
 
-	//	litter.Dump(LabelMap)
-	// litter.Dump(Labels)
 	return instructions
 }
 
@@ -86,10 +82,8 @@ func formInstruction(line string, numRegs uint8, opcode OpcodeNumber) (what *Ins
 		Opcode:         opcode,
 		NumberOperands: numRegs,
 		IsImmediate:    strings.Contains(line, "i "),
-		//		Input:          line,
+		//Input:          line,
 	}
-
-	//fmt.Println(line, " -- ", numRegs, " -- ", opcode)
 
 	if what.NumberOperands == 3 {
 		if !what.IsImmediate {

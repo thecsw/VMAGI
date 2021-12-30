@@ -9,25 +9,13 @@ const (
 )
 
 var (
-	//Memory = map[RegisterDepth]ValueWidth{}
-	Memory = make([]ValueWidth, MEMORY_DEPTH)
-
-	//ContextNumber = ContextDepth(0)
-	MemoryOffset = RegisterDepth(0)
-
-	//Labels = make([]InstructionDepth, 100)
-	//Labels = map[LabelType]InstructionDepth{}
-	//Labels = freecache.NewCache(10 * 1024 * 1024)
-
-	Stack = &Stack64{}
-
-	ReturnStack = &Stack32{}
-
-	PC = InstructionDepth(0)
-
-	HaltValue ValueWidth
-	Halted    bool
-
+	Memory        = make([]ValueWidth, MEMORY_DEPTH)
+	MemoryOffset  = RegisterDepth(0)
+	Stack         = &Stack64{}
+	ReturnStack   = &Stack32{}
+	PC            = InstructionDepth(0)
+	HaltValue     ValueWidth
+	Halted        bool
 	ContextNumber = 0
 )
 
@@ -47,16 +35,6 @@ func Execute(instructions []*Instruction) {
 	for {
 		currentPC = PC
 		currentInstruction = instructions[PC]
-
-		// fmt.Println("----------- STACK -----------")
-		// litter.Dump(Stack.Array[:10])
-		// fmt.Println("----------- MEMORY -----------")
-		// litter.Dump(Memory[RegisterDepth(ContextNumber)*CONTEXT_SIZE : RegisterDepth(ContextNumber)*(CONTEXT_SIZE)+10])
-		// fmt.Println("----------- RUNNING -----------")
-		// fmt.Println(currentInstruction.Input)
-		// fmt.Println(currentInstruction.LabelIndex)
-		// fmt.Println(currentInstruction.LabelImmediate)
-
 		executeFunctions[currentInstruction.Opcode](currentInstruction)
 		if currentPC == PC {
 			PC++

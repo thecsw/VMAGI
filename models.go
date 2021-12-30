@@ -15,15 +15,10 @@ type Instruction struct {
 	SourceRegister1     RegisterDepth
 	SourceRegister2     RegisterDepth
 	DestinationRegister RegisterDepth
-
-	IsImmediate    bool
-	ImmediateValue ImmediateWidth
-
-	LabelIndex LabelDepth
-
-	LabelImmediate InstructionDepth
-
-	//LabelImmediate LabelType
+	IsImmediate         bool
+	ImmediateValue      ImmediateWidth
+	LabelIndex          LabelDepth
+	LabelImmediate      InstructionDepth
 
 	//Input string
 }
