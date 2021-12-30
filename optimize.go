@@ -1,17 +1,13 @@
 package main
 
-const (
-	STACK_ANALYSIS_DEPTH = 5
-)
-
 var (
 	Arguments          = &Stack64{}
 	cachedCalls        = map[InstructionDepth](map[ValueWidth]ValueWidth){}
 	LastFunctionCalled InstructionDepth
 )
 
-func init() {
-	Arguments.Init(10000)
+func optimizerInitialize() {
+	Arguments.Init(STACK_DEPTH)
 }
 
 func cacheFunctionCall(labelNum InstructionDepth) bool {

@@ -1,9 +1,9 @@
 package main
 
 const (
-	MEMORY_DEPTH       = 10000
-	STACK_DEPTH        = 10000
-	RETURN_STACK_DEPTH = 10000
+	MEMORY_DEPTH       = 100000
+	STACK_DEPTH        = 100000
+	RETURN_STACK_DEPTH = STACK_DEPTH
 
 	CONTEXT_SIZE = 10
 )
@@ -32,6 +32,7 @@ func Execute(instructions []*Instruction) {
 	for i := OpcodeNumber(0); i <= NOP; i++ {
 		executeFunctions[i] = executeFunctionsMap[i]
 	}
+	optimizerInitialize()
 
 	// Init the stacks
 	Stack.Init(STACK_DEPTH)

@@ -1,4 +1,4 @@
-        addi #1, 50, #1   -- 0 depth is 5
+        addi #1, 100, #1  -- 0 depth is 5
         push #1           -- 1 push depth to parameters
         call @fib!        -- 2 call fib(n)
         pop #1            -- 3 pop the return

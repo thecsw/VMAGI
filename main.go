@@ -16,9 +16,14 @@ func main() {
 		os.Exit(1)
 	}
 
-	data, _ := ioutil.ReadFile(os.Args[1])
-	lines := strings.Split(string(data), "\n")
-	instructions := ParseInput(lines)
-	Execute(instructions)
+	data, err := ioutil.ReadFile(os.Args[1])
+	if err != nil {
+		fmt.Println("You gave me a bad file:", err.Error())
+	}
+
+	// Execute the input by splitting by newlines and parsing
+	Execute(ParseInput(strings.Split(string(data), "\n")))
+
+	// Show the halt value
 	fmt.Printf("VMAGI stopped execution with %d\n", HaltValue)
 }
