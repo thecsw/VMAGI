@@ -3,50 +3,39 @@ package main
 const (
 	STACK_DEPTH        = 10000
 	RETURN_STACK_DEPTH = 10000
+
+	CONTEXT_SIZE = 10
 )
 
 var (
-	Memory        = map[ContextDepth](map[RegisterDepth]ValueWidth){}
-	ContextNumber = ContextDepth(0)
+	Memory = map[RegisterDepth]ValueWidth{}
+	//ContextNumber = ContextDepth(0)
+	MemoryOffset = RegisterDepth(0)
 
 	Labels = map[LabelType]InstructionDepth{}
 
-	Stack        = make([]ValueWidth, STACK_DEPTH)
-	StackPointer = uint32(0)
+	Stack = &Stack64{}
 
-	ReturnStack        = make([]InstructionDepth, RETURN_STACK_DEPTH)
-	ReturnStackPointer = uint32(0)
+	ReturnStack = &Stack32{}
 
 	PC = InstructionDepth(0)
 
-	HaltValue ValueWidth
-	Halted    bool
+	HaltValue     ValueWidth
+	Halted        bool
+	ContextNumber = 0
 )
 
 func Execute(instructions []*Instruction) {
 
-	// fmt.Println("-------- LABELS --------")
-	// litter.Dump(Labels)
-
-	// Allocate the root context
-	Memory[ContextNumber] = make(map[RegisterDepth]ValueWidth)
+	Stack.Init(STACK_DEPTH)
+	ReturnStack.Init(RETURN_STACK_DEPTH)
 
 	var currentPC InstructionDepth
 	var currentInstruction *Instruction
 	for PC < InstructionDepth((len(instructions))) {
 		currentPC = PC
 		currentInstruction = instructions[PC]
-
-		// fmt.Println("\n-------- STACK ---------")
-		// fmt.Println(StackPointer)
-		// litter.Dump(Stack[:3])
-		// fmt.Println("\n------ REGISTERS -------")
-		// fmt.Println(ContextNumber)
-		// litter.Dump(Memory[ContextNumber])
-		// fmt.Println("TO EXECUTE: ", currentInstruction.Input)
-
 		executeFunctions[currentInstruction.Opcode](currentInstruction)
-		// No PC manipulation happened
 		if currentPC == PC {
 			PC++
 		}
@@ -167,27 +156,17 @@ func executeXor(inst *Instruction) {
 }
 
 func executeCall(inst *Instruction) {
-	// Store the PC at the top of the stack
-	ReturnStack[ReturnStackPointer] = PC + 1
-	ReturnStackPointer++
-	// Set the PC to point at the label
+	ReturnStack.Push(PC + 1)
 	PC = Labels[inst.LabelImmediate]
-	// Start a new context
 	ContextNumber++
-	Memory[ContextNumber] = make(map[RegisterDepth]ValueWidth)
 }
 
 func executeJump(inst *Instruction) {
-	// Simply set PC to the label
 	PC = Labels[inst.LabelImmediate]
 }
 
 func executeReturn(inst *Instruction) {
-	// Set the PC to the last return address
-	ReturnStackPointer--
-	PC = ReturnStack[ReturnStackPointer]
-	// Close the current context
-	Memory[ContextNumber] = nil
+	PC = ReturnStack.Pop()
 	ContextNumber--
 }
 
@@ -265,16 +244,14 @@ func executeJumpIfFalse(inst *Instruction) {
 
 func executePush(inst *Instruction) {
 	if !inst.IsImmediate {
-		Stack[StackPointer] = getMemory(inst.SourceRegister1)
+		Stack.Push(getMemory(inst.SourceRegister1))
 	} else {
-		Stack[StackPointer] = ValueWidth(inst.ImmediateValue)
+		Stack.Push(ValueWidth(inst.ImmediateValue))
 	}
-	StackPointer++
 }
 
 func executePop(inst *Instruction) {
-	StackPointer--
-	Memory[ContextNumber][inst.DestinationRegister] = Stack[StackPointer]
+	setMemory(inst.DestinationRegister, Stack.Pop())
 }
 
 func executeHalt(inst *Instruction) {
@@ -315,9 +292,9 @@ func negateValue(what ValueWidth) ValueWidth {
 }
 
 func setMemory(reg RegisterDepth, val ValueWidth) {
-	Memory[ContextNumber][reg] = val
+	Memory[RegisterDepth(ContextNumber)*CONTEXT_SIZE+reg] = val
 }
 
 func getMemory(reg RegisterDepth) ValueWidth {
-	return Memory[ContextNumber][reg]
+	return Memory[RegisterDepth(ContextNumber)*CONTEXT_SIZE+reg]
 }
