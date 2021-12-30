@@ -25,8 +25,6 @@ var (
 	src2  RegisterDepth
 	isImm bool
 	imm   ValueWidth
-
-	LastFunctionCalled InstructionDepth
 )
 
 func Execute(instructions []*Instruction) {

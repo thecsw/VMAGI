@@ -5,16 +5,9 @@ const (
 )
 
 var (
-	lastStackSnapshot   = make([]ValueWidth, STACK_ANALYSIS_DEPTH)
-	returnStackSnapshot = make([]ValueWidth, STACK_ANALYSIS_DEPTH)
-	lastStackPointer    int
-	returnStackPointer  int
-	lastStackFilled     bool
-	returnStackFilled   bool
-
-	Arguments = &Stack64{}
-
-	cachedCalls = map[InstructionDepth](map[ValueWidth]ValueWidth){}
+	Arguments          = &Stack64{}
+	cachedCalls        = map[InstructionDepth](map[ValueWidth]ValueWidth){}
+	LastFunctionCalled InstructionDepth
 )
 
 func init() {
