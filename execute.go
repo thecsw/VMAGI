@@ -322,9 +322,9 @@ func negateValue(what ValueWidth) ValueWidth {
 }
 
 func setMemory(reg RegisterDepth, val ValueWidth) {
-	Memory[RegisterDepth(ContextNumber)*CONTEXT_SIZE+reg] = val
+	Memory[RegisterDepth(ContextNumber)*CONTEXT_SIZE+reg-1] = val
 }
 
 func getMemory(reg RegisterDepth) ValueWidth {
-	return Memory[RegisterDepth(ContextNumber)*CONTEXT_SIZE+reg]
+	return Memory[RegisterDepth(ContextNumber)*CONTEXT_SIZE+reg-1]
 }
