@@ -1,0 +1,19 @@
+        pushi 5
+        call @fac
+        pop #1
+        halt #1
+
+fac:    pop #1
+        jmpz #1, @fac0
+        addi #1, 0, #2
+
+facl:   subi #2, 1, #2
+        jmpz #2, @face
+        mul #1, #2, #1
+        jmp @facl
+
+face:   push #1
+        ret
+
+fac0:   pushi 1
+        ret

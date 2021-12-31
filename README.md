@@ -1,8 +1,14 @@
+![VMAGI](./VMAGI.png)
+
 # VMAGI
 
-Welcome! `VMAGI` is a small emulator/interpreter my friend [Matthew](https://github.com/) and I
+Welcome! `VMAGI` is a small emulator/interpreter my friend 
+[Matthew](https://github.com/matthewsanetra) 
+and I
 challenged each other to build in 24 hours. This includes both the implementation of the interpreter
 and creating your own ISA/3ac/IR for it that it will run on top of. 
+
+If you want to see Matthew's implementation, go to [his repository](https://github.com/matthewsanetra/sandy_isa).
 
 ## Basics
 
@@ -94,3 +100,8 @@ instructions in our language (See `models.go`). After that, we will be starting 
 by moving the `PC` (Program Counter) pointer where it has to go. For more gory details on the execution logic
 and code, please go and see `execute.go`
 
+## Performance
+
+Definitely one of the hardest and most annoying parts of writing `VMAGI` was improving performance on deeply
+nested recursive calls. Recall that we had to make an emulator that recursively calculates any member of the
+Fibonacci sequence.

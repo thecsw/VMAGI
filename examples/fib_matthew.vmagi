@@ -1,0 +1,27 @@
+start:  pushi 30
+        call @fib!
+        pop #1
+        halt #1
+
+fib!:   pop #1
+        subi #1, 1, #1
+        jmpz #1, @fib1
+        addi #1, 0, #2
+        subi #2, 1, #2
+        jmpz #2, @fib1
+        push #1
+        push #2
+        call @fib!
+        pop #2
+        pop #1
+        push #2
+        push #1
+        call @fib!
+        pop #1
+        pop #2
+        add #1, #2, #1
+        push #1
+        ret
+
+fib1:   pushi 1
+        ret
