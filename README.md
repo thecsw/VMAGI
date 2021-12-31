@@ -7,8 +7,8 @@ Welcome! `VMAGI` is a small emulator/interpreter my friend
 and I
 challenged each other to build in 24 hours. This includes both the implementation of the interpreter
 and creating your own ISA/3ac/IR for it that it will run on top of. 
-
-If you want to see Matthew's implementation, go to [his repository](https://github.com/matthewsanetra/sandy_isa).
+If you want to see Matthew's implementation, go to 
+[his repository](https://github.com/matthewsanetra/sandy_isa)
 
 ## Basics
 
@@ -29,7 +29,7 @@ In the end of the competition, which is right now as I'm writing it, `VMAGI` has
 You see, I have a very classical Computer Science training, so I think in terms of memory layout, IO-bound
 operations, and etc. For more details, see `isa.go` for the list of instructions and how the look like.
 
-## Example
+## Fibonacci example
 
 Here is an example of the recursive fibonacci
 ```
@@ -104,4 +104,71 @@ and code, please go and see `execute.go`
 
 Definitely one of the hardest and most annoying parts of writing `VMAGI` was improving performance on deeply
 nested recursive calls. Recall that we had to make an emulator that recursively calculates any member of the
-Fibonacci sequence.
+Fibonacci sequence. As you can imagine, every `n`th member of the sequence has to call `n-1` and `n-2`, which
+they in return call everything even deeper.
+
+On the first try, smaller values of Fibonacci were working quite reliably but if we start going anywhere above
+30 or 40, it started to slow down that you could feel it. `fib(30)` would take about 3 secounds and `fib(40)`
+maybe a minute or two. So what do we do? Well, you should always use your trusty `pprof` to see for yourself
+where your program spends most of its CPU time and where does the memory go.
+
+Looking at the CPU profile of `VMAGI`, I found that a lot of time was spent on hashing functions (hashtable
+lookup for labels and memory), context switching (each `call @func` created a new memory location), function
+lookup, and excessive memory accesses. Many of them were fixed by mainly re-engineering my approach to their
+logic. Instead of hashing, just index and instead of context switch (which takes a whole allocation), just 
+offset into a free pre-allocated part. 
+
+My first benchmark was the `fib(30)`, which would take about 7 seconds to run on a raw machine. After adding
+some performance boosts and cleaning the code, it went down to whopping ~250ms. But this was still small fish
+to fry. Next big benchmark in sight was `fib(40)`, which even with all the recent improvements takes ~30 seconds
+to run. Profiling doesn't help that much, as the low hanging fruit has already been picked.
+
+The biggest bottlenecks in the code now were the `if`s loop that check whether an instruction using an immediate
+field, basic variable assignments, stack operations, and most importantely, memory accesses made for variables 
+retrieval. But what can I do here? Our `Memory` is just an array. I can't really think of something that is 
+considerably faster than straight native indexing. 
+
+I don't want to fight with the language. Instead of focusing my attention onto raw slice access overheads and 
+the time it takes to do basic math, I would have to focus on straight optimizations now. Well, I only have an
+hour left. I thought that the best way to approach it would be writing some sort of a caching mechanism that
+makes executing millions lines of duplicate instructions unnecessary. 
+
+But how would one do caching in an assembly-like language? There are no clear constructs, such as the number
+of expected arguments and return values. I called this "Memoization Strategy by Assembly Stack Depth Analysis"
+or MSASDA (totally made up). In essens, this is your familiar memoizer that caches the input of a function with
+its output. You would ask me, how does the optimizer know if the function is pure? How does it know it has a 
+valid structure to be memoized? 
+
+I have an answer just for you. You tell it. Your function can be denoted by a label `fib: ....` but if you want
+`VMAGI` to memoize and optimize your function, simply add a bang to the label's signature. So you would declare
+it in a way like `fib!: ....`. By this, the programmer gives several guarantees to `VMAGI`: *1)* `fib!` is pure 
+with no side-effects (return can be deterministically predicted by input arguments) and *2)* `fib!` takes exactly
+one argument and returns exactly one value. 
+
+Point *1)* is a little bit of cheating, because every function in `VMAGI` during its execution gets a whole new
+context and the only way for functions on the stack to communicate with each other is to pass data to each
+other through pushing and popping off the stack. Point *2)* is a little more strict. Multiple input/return functions,
+just anywhere can get pretty ugly (even with python's fancy `lru_cache`). If a programmer *really* needs 
+some part of the code to run fast, then divide the problem into subproblem(s) using single-input-output routines.
+
+This made a day&night difference. You remember how `fib(40)` was taking about ~30 seconds to run? It's about 5-7ms
+now. As any other fibonacci argument, even when it starts overflowing signed 64-bit integers. Actually, any input
+will give you about ~6ms. The noise on my system is greater than the execution time itself, with all the parsing
+and caching. I can't even profile this program, because profiler simply can't read that fast. Only makes you see 
+the power of caching in one place. All you need to enable this, is to add a bang to a label's (function's) 
+signature to tell `VMAGI` to try and cache the calls of this function. 
+
+I would argue it's a good improvement we made here from infinity to ~30s to 7ms. There are many other optimizations
+and improvements, but I'm out of time, and satisfied with what the result is in 24 hours since the start of the 
+competition. 
+
+## Future work
+
+Of course, there is a lot that can be done to improve `VMAGI`. In particular, something around improving `execute.go`
+way of handling immediate value. Each context is limited to ten variables, so you can only address `#1,...,#10` variables
+before unholy stuff happens. This could be resized and made more dynamic. This list can go on. For 24 hours, I'm very happy.
+
+## Why VMAGI?
+
+[MAGI](https://evangelion.fandom.com/wiki/Magi) is a supercomputer from Evangelion. I love Evangelion and I wanted
+to name it something similar, like `MAGIV`, my friend told me to name it `VMAGI` instead, so here we have it!

@@ -7,25 +7,39 @@ import (
 )
 
 var (
-	ThreeRegisterRegex  = regexp.MustCompile(`\s*#(\d+)\s*,\s*#(\d+)\s*,\s*#(\d+)\s*`)
+	// ThreeRegisterRegex matches instructions with all three operands as variables.
+	ThreeRegisterRegex = regexp.MustCompile(`\s*#(\d+)\s*,\s*#(\d+)\s*,\s*#(\d+)\s*`)
+	// ThreeImmediateRegex matches instructiosn with two variables and one immediate.
 	ThreeImmediateRegex = regexp.MustCompile(`i \s*#(\d+)\s*,\s*(\d+)\s*,\s*#(\d+)\s*`)
 
-	TwoRegisterRegex  = regexp.MustCompile(`\s*#(\d+)\s*,\s*#(\d+)\s*`)
+	// TwoRegisterRegex matches instructions with all two operands as variables.
+	TwoRegisterRegex = regexp.MustCompile(`\s*#(\d+)\s*,\s*#(\d+)\s*`)
+	// TwoImmediateRegex matches instructions with one variable and one immediate.
 	TwoImmediateRegex = regexp.MustCompile(`i \s*#(\d+)\s*,\s*(\d+)\s*`)
 
-	OneRegisterRegex  = regexp.MustCompile(`\s*#(\d+)\s*`)
+	// OneRegisterRegex matches instructions if passed operand is variable.
+	OneRegisterRegex = regexp.MustCompile(`\s*#(\d+)\s*`)
+	// OneImmediateRegex matches instructions with just an immediate value passed.
 	OneImmediateRegex = regexp.MustCompile(`i \s*(\d+)\s*`)
 
+	// LabelDeclarationRegex matches lines that declare a new label.
 	LabelDeclarationRegex = regexp.MustCompile(`\s*([^:]+):\s*`)
-	LabelImmediateRegex   = regexp.MustCompile(`\s*@([^:]+)\s*`)
+	// LabelImmediateRegex matches instructions that reference a label.
+	LabelImmediateRegex = regexp.MustCompile(`\s*@([^:]+)\s*`)
 
-	ConditionalJumpRegisterRegex  = regexp.MustCompile(`\s*#(\d+)\s*,\s*@([^:]+)\s*`)
+	// ConditionalJumpRegisterRegex matches an instruction that jumps from a variable value.
+	ConditionalJumpRegisterRegex = regexp.MustCompile(`\s*#(\d+)\s*,\s*@([^:]+)\s*`)
+	// ConditionalJumpImmediateRegex matches an instruction that jumps from an immediate value.
 	ConditionalJumpImmediateRegex = regexp.MustCompile(`i \s*(\d+)\s*,\s*@([^:]+)\s*`)
 
+	// CommentRegex matches all comments that start with "--".
 	CommentRegex = regexp.MustCompile(`--.+`)
 
-	LabelMap    = map[string]LabelDepth{}
-	Labels      = make([]InstructionDepth, 100)
+	// LabelMap maps label string to a temporary index.
+	LabelMap = map[string]LabelDepth{}
+	// Labels maps a label temporary index to the instruction line where its defined.
+	Labels = make([]InstructionDepth, 100)
+	// FoundLabels is an internal housekeeping variable to process labels.
 	FoundLabels = 1
 )
 
@@ -77,14 +91,15 @@ func ParseInstruction(line string) *Instruction {
 	panic("illegal instruction while parsing")
 }
 
+// formInstruction given a line returns a filled instruction object.
 func formInstruction(line string, numRegs uint8, opcode OpcodeNumber) (what *Instruction) {
 	what = &Instruction{
 		Opcode:         opcode,
 		NumberOperands: numRegs,
 		IsImmediate:    strings.Contains(line, "i "),
-		//Input:          line,
 	}
 
+	// Match 3 operands
 	if what.NumberOperands == 3 {
 		if !what.IsImmediate {
 			matches := ThreeRegisterRegex.FindAllStringSubmatch(line, -1)
@@ -109,6 +124,7 @@ func formInstruction(line string, numRegs uint8, opcode OpcodeNumber) (what *Ins
 		return
 	}
 
+	// Match 2 operands
 	if what.NumberOperands == 2 {
 		// See if we're doing the JUMPIF
 		if what.Opcode == JUMPF || what.Opcode == JUMPT {
@@ -156,6 +172,7 @@ func formInstruction(line string, numRegs uint8, opcode OpcodeNumber) (what *Ins
 		return
 	}
 
+	// Match 1 operand
 	if what.NumberOperands == 1 {
 		// Call or jump
 		if what.Opcode == CALL || what.Opcode == JUMP {
@@ -216,18 +233,23 @@ func formInstruction(line string, numRegs uint8, opcode OpcodeNumber) (what *Ins
 	return
 }
 
+// dummyInt is a global dummy container for speed.
 var dummyInt = 0
 
+// stringToRegister converts a string to a RegisterDepth value/number/integer.
 func stringToRegister(register string) RegisterDepth {
 	dummyInt, _ = strconv.Atoi(register)
 	return RegisterDepth(dummyInt)
 }
 
+// stringToImmediate converts a string to a ValueWidth value/number/integer.
 func stringToImmediate(what string) ValueWidth {
 	dummyInt, _ = strconv.Atoi(what)
 	return ValueWidth(dummyInt)
 }
 
+// addNewLabel creates a new temporary index for a label if one doesn't
+// already exist.
 func addNewLabel(what string) LabelDepth {
 	if v, ok := LabelMap[what]; !ok {
 		LabelMap[what] = LabelDepth(FoundLabels)
@@ -238,10 +260,8 @@ func addNewLabel(what string) LabelDepth {
 	}
 }
 
-var (
-	optimizedFunctions = map[InstructionDepth]interface{}{}
-)
-
+// setLabel appoints an actual instruction line that is correspondent
+// with a label to its temporary index.
 func setLabel(what string, instruction InstructionDepth) {
 	thisFunctionIsSimple := strings.ContainsRune(what, '!')
 	if thisFunctionIsSimple {
@@ -250,6 +270,7 @@ func setLabel(what string, instruction InstructionDepth) {
 	Labels[LabelMap[what]] = instruction
 }
 
+// labelToInstruction maps label string to its instruction line.
 func labelToInstruction(what string) InstructionDepth {
 	return Labels[LabelMap[what]]
 }
