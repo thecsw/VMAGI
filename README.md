@@ -10,6 +10,11 @@ and creating your own ISA/3ac/IR for it that it will run on top of.
 If you want to see Matthew's implementation, go to 
 [his repository](https://github.com/matthewsanetra/sandy_isa)
 
+My friend [Ethan](https://github.com/Username-ejg-not-available) also joined us on this competition
+and completed [his implementation](https://github.com/Username-ejg-not-available/not-fake-assembly-language).
+
+Funnily enough, I did it in Go, Matthew in Rust, Ethan in C++. 
+
 ## Basics
 
 The goal within 24 hours was to write an interpreter that can reliably run a recursive version
