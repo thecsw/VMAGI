@@ -2,7 +2,7 @@ package main
 
 var (
 	// Arguments stores the arguments passed to the optimized functions.
-	Arguments = &Stack64{}
+	Arguments = map[InstructionDepth](*Stack64){}
 	// cachedCalls stores the function results.
 	cachedCalls = map[InstructionDepth](map[ValueWidth]ValueWidth){}
 	// LastFunctionCalled is the last function called.
@@ -13,7 +13,10 @@ var (
 
 // optimizerInitialize initialized the arguments stack.
 func optimizerInitialize() {
-	Arguments.Init(STACK_DEPTH)
+	for f := range optimizedFunctions {
+		Arguments[f] = &Stack64{}
+		Arguments[f].Init(STACK_DEPTH)
+	}
 }
 
 // cacheFunctionCall sees if we have a result stored.
@@ -40,7 +43,7 @@ func optimizerAnalyzeCallStack() {
 	if _, ok := optimizedFunctions[LastFunctionCalled]; !ok {
 		return
 	}
-	Arguments.Push(Stack.Peek())
+	Arguments[LastFunctionCalled].Push(Stack.Peek())
 	if _, ok := cachedCalls[LastFunctionCalled]; !ok {
 		cachedCalls[LastFunctionCalled] = map[ValueWidth]ValueWidth{}
 	}
@@ -53,7 +56,7 @@ func optimizerAnalyzeReturnStack() {
 		return
 	}
 	lastReturn := Stack.Peek()
-	lastArgument := Arguments.Pop()
+	lastArgument := Arguments[LastFunctionCalled].Pop()
 	cachedCalls[LastFunctionCalled][lastArgument] = lastReturn
 }
 
